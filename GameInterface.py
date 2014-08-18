@@ -37,6 +37,8 @@ class GameInterface(ControlSurface):
 		backref = self
 		
 		self.log_message("listening!")
+		self.log_message("CONTROL_SURFACE_DETAILS")
+		self.log_message(str(dir(ControlSurface)))
 		inport.listen(1)
 		myRun = Runner()
 		t = threading.Thread(target = myRun.run)
@@ -58,7 +60,8 @@ class GameInterface(ControlSurface):
 					# ignore
 					data = None
 				else:
-					self.log_message(e)
+					self.log_message("*** EXCEPTION ***")
+					self.log_message(str(e))
 			else:
 				if len(data) > 0:
 					self.log_message("got data: " + data)
@@ -80,6 +83,13 @@ class GameInterface(ControlSurface):
 					elif tok[0] == "stop":
 						self.livedoc.stop_playing()
 					
+					elif tok[0] == "playscene":    #todo: playscene <index> or playscene <name>
+						scene = self.findscene(tok[1])
+						if scene is not None:
+							scene.fire()
+
+					#elif tok[0] == "cc":
+
 					#elif tok[0] == "tempo":
 					#	tempo = int(tok[1])
 					#	if tempo is not None:
@@ -93,6 +103,13 @@ class GameInterface(ControlSurface):
 			for c in t.clip_slots:
 				if c.clip is not None and c.clip.name == name:
 					return c
+		return None
+
+	""" finds the named scene and returns its object """
+	def findscene(self, name):
+		for s in self.livedoc.scenes:
+			if s is not None and s.name == name:
+				return s
 		return None
 
 """ this accepts incoming connections """

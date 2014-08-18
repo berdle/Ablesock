@@ -7,9 +7,8 @@ Examples would include an interactive art installation that fires
 named clips in response to user input.
 
 Features:
-	Activate named clips via socket connection.
-	Nothing much else! It's very much a work in progress
-	and today is day 1.
+	Activate named clips and scenes via socket connection.
+	It's very much a work in progress.
 
 Notes: 
 	Currently using port 6000. Alter in code as desired. Will
@@ -18,5 +17,9 @@ Notes:
 
 	playclip <name>		: triggers the clip with name <name>
 	stopclip <name>		: stops the clip with <name> from playing
+	
+	playscene <name>	: triggers the scene <name>
+
 	stopall				: stops all clips from playing
 	stop				: same as pressing stop on transport
+
