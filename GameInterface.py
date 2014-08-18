@@ -3,6 +3,7 @@ import Live
 import time
 import sys
 
+# alter this to point to your python libs. using 2.5.1 as is version supported by Ableton Live 8
 sys.path.append("C:\\Python25\\lib")
 import socket
 import threading
@@ -12,78 +13,41 @@ from _Framework.ControlSurface import ControlSurface # Central base class for sc
 from _Framework.ControlSurfaceComponent import ControlSurfaceComponent # Base class for all classes encapsulating functions in Live
 
 backref = None
-
-TCP_IP = '127.0.0.1'
-TCP_PORT = 5005
-BUFFER_SIZE = 1024
 inport = None
 client = None
+
+TCP_IP = '127.0.0.1'
+TCP_PORT = 6000
+BUFFER_SIZE = 1024
+
+# todo - move these !
 inport = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-inport.bind(('127.0.0.1', 6000))
+inport.bind((TCP_IP, TCP_PORT))
 outport = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+""" Main class - contains song_timer_listener that drives the socket reading """
 class GameInterface(ControlSurface):
 	__module__ = __name__
 	__doc__ = "TCP Interface for ableton live"
 
 	def __init__(self, c_instance):
-		"""should set up the socket in here i guess?"""
-		#self.log_message("Opening Socket")
 		ControlSurface.__init__(self, c_instance)
-		#self.set_suppress_rebuild_requests(True)
+		#self.set_suppress_rebuild_requests(True) --causes errors?
 		global backref
 		backref = self
 		
 		self.log_message("listening!")
 		inport.listen(1)
-		self.log_message("connection accepted sock open?")
-		self.log_message("making new thread to listen")
-
-		##self.log_message("trying method without thread: ")
-		##self.run()
-
 		myRun = Runner()
 		t = threading.Thread(target = myRun.run)
-
-		self.log_message("active threads = " + str(threading.activeCount()))
-		self.log_message("starting new thread")
+		self.log_message("starting accept thread")
 		t.start()
-		self.log_message("active threads = " + str(threading.activeCount()))
-		#self.log_message("waiting for join")
-		#t.join()
-		#self.log_message("passed join statement")
-		#self.log_message("active threads = " + str(threading.activeCount()))
-		
-		
-
-
-		#d = str(Live.Application.get_application().get_document().tracks)
-		#l = str(Live.Song.__dict__)
-		#self.log_message("List of attrs: \n " + d)
-		#""" testing stuff """
 		self.livedoc = Live.Application.get_application().get_document()
-
 		self.log_message(str(dir(self.livedoc)))
-
 		self.livedoc.add_current_song_time_listener(self.listen)
 
 
-		#self.log_message("attrs for controlsurface = " + str(dir(self)))
-		#for t in self.livedoc.tracks:
-			#self.log_message("track details: " + str(dir(t)))
-		#	for c in t.clip_slots:
-				#self.log_message("clip details: " + str(dir(c.clip)))				
-		#		if c.clip is not None:
-		#			self.log_message("clip_name_is: " + c.clip.name)
-		#			if c.clip.name == "shifted_arpeg":
-		#				self.log_message("FIRING_CLIP")
-		#				c.fire()
-
-		#Live.Song.Song.start_playing(Live.Song.Song)
-		#live_set.start_playing()
-
 	def listen(self):
-		#self.log_message("pop!")
 		global client
 		if client is not None:
 			try:
@@ -98,31 +62,40 @@ class GameInterface(ControlSurface):
 			else:
 				if len(data) > 0:
 					self.log_message("got data: " + data)
-					#tokenize and handle
+					# todo: refactor this out 
 					tok = data.split()
 					if tok[0] == "playclip":
-						for t in self.livedoc.tracks:
-							for c in t.clip_slots:
-								if c.clip is not None and c.clip.name == tok[1]:
-									c.clip.fire()
+						slot = self.findclip(tok[1])
+						if slot is not None:
+							slot.fire()
+					
+					elif tok[0] == "stopclip":
+						slot = self.findclip(tok[1])
+						if slot is not None:
+							slot.stop()
+					
+					elif tok[0] == "stopall":
+						self.livedoc.stop_all_clips()
+					
+					elif tok[0] == "stop":
+						self.livedoc.stop_playing()
+					
+					#elif tok[0] == "tempo":
+					#	tempo = int(tok[1])
+					#	if tempo is not None:
+					#		self.livedoc.tempo(tempo)
 
-						
 
 
+	""" Finds the named clip and returns a reference to the containing slot """
+	def findclip(self, name):
+		for t in self.livedoc.tracks:
+			for c in t.clip_slots:
+				if c.clip is not None and c.clip.name == name:
+					return c
+		return None
 
-	def run(self):
-		"""wait on the socket?"""
-		backref.log_message("in run")
-		x = 0
-		while x < 100:
-			#backref.log_message("waiting for a connection")
-			x = x + 1
-			#(clientsocket, address) = inport.accept()
-
-	#def update_display(self):
-	#	self.log_message("update display was called!")
-
-
+""" this accepts incoming connections """
 class Runner():
 	def run(self):
 		global inport		
@@ -142,6 +115,8 @@ class Runner():
 		#			c.clip.fire()
 		#
 		
+""" possibly deprecated as the update frequency is ~100ms vs. ~60ms for the current_song_time listener """
+""" may still require to handle start messages when the song is not playing """
 class Handler():
 	def run(self):
 		global client

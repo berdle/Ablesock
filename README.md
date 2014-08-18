@@ -17,4 +17,6 @@ Notes:
 	is made. The current single supported command is 
 
 	playclip <name>		: triggers the clip with name <name>
-
+	stopclip <name>		: stops the clip with <name> from playing
+	stopall			: stops all clips from playing
+	stop			: same as pressing stop on transport
