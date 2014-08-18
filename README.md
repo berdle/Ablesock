@@ -14,9 +14,9 @@ Features:
 Notes: 
 	Currently using port 6000. Alter in code as desired. Will
 	automatically start playing the set when a connection
-	is made. The current single supported command is 
+	is made. The current supported commands are:
 
 	playclip <name>		: triggers the clip with name <name>
 	stopclip <name>		: stops the clip with <name> from playing
-	stopall			: stops all clips from playing
-	stop			: same as pressing stop on transport
+	stopall				: stops all clips from playing
+	stop				: same as pressing stop on transport
